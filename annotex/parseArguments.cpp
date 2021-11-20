@@ -13,14 +13,22 @@
 
 using namespace std;
 
-static void print_usage()
+static void printUsage()
 {
 	printf("\nUsage: annotex.exe [options] input.png\n\n");
 	printf("-f=<format> Specify encoding format. Default: auto\n");
 	printf("   diff: Encode to BC7.\n");
 	printf("   mask: Encode to BC1.\n");
 	printf("   auto: Encode to BC1 if the file ends with '_mask.png', otherwise encode to BC7.\n");
-	printf("-v verbose (print more status output)\n");
+	printf("-l=<0-9> Number of LOD to generate with '_<LOD>.png' ending. 0 will disable LODs. Default: 0\n");
+	printf("-v verbose\n");
+}
+
+static bool invalidUsage(const char* pArg)
+{
+	fprintf(stderr, "Invalid argument: %s\n", pArg);
+	printUsage();
+	return false;
 }
 
 bool parseArguments(int argc, char* argv[], rdo_bc::rdo_bc_params& rp, AnnotexParameters& annotexParameters)
@@ -35,6 +43,8 @@ bool parseArguments(int argc, char* argv[], rdo_bc::rdo_bc_params& rp, AnnotexPa
 	annotexParameters.verbose = false;
 	annotexParameters.outputToCurrentDir = true;
 	annotexParameters.format = AnnotexFormat::Auto;
+	annotexParameters.lods = 0;
+
 
 	for (int i = 0; i < argc; i++)
 		if (strcmp(argv[i], "-v") == 0)
@@ -44,7 +54,7 @@ bool parseArguments(int argc, char* argv[], rdo_bc::rdo_bc_params& rp, AnnotexPa
 		printf("annotex %s - Anno DDS texture encoder (based on bc7enc v%s)\n", ANNOTEX_VERSION, BC7ENC_VERSION);
 	if (argc < 2)
 	{
-		print_usage();
+		printUsage();
 		return false;
 	}
 
@@ -78,16 +88,23 @@ bool parseArguments(int argc, char* argv[], rdo_bc::rdo_bc_params& rp, AnnotexPa
 					rp.m_dxgi_format = DXGI_FORMAT_BC1_UNORM;
 					annotexParameters.pixel_format_bpp = 4;
 				}
-				else {
-					print_usage();
-					return false;
-				}
+				else
+					return invalidUsage(pArg);
+				break;
+			}
+			case 'l':
+			{
+				if (0 != strncmp(pArg + 2, "=", 1))
+					return invalidUsage(pArg);
+				const int lods = atoi(pArg + 3);
+				if (lods < 0 || lods > 9)
+					return invalidUsage(pArg);
+				annotexParameters.lods = (uint32_t)lods;
 				break;
 			}
 			default:
 			{
-				fprintf(stderr, "Invalid argument: %s\n", pArg);
-				return false;
+				return invalidUsage(pArg);
 			}
 			}
 		}

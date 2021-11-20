@@ -20,12 +20,13 @@ CompressedImage::CompressedImage(vector<shared_ptr<rdo_bc::rdo_bc_encoder>> enco
 	_encoders = encoders;
 }
 
-bool CompressedImage::save(const string& filePath, const rdo_bc::rdo_bc_params& rp, const AnnotexParameters& annotexParameters)
+bool CompressedImage::save(const string& filePath, const rdo_bc::rdo_bc_params& rp, const AnnotexParameters& annotexParameters, uint32_t lodOffset)
 {
-	// TBD store lods
+	if (lodOffset >= this->_encoders.size() || this->_encoders.begin() + lodOffset == this->_encoders.end()) {
+		return false;
+	}
 
-	//string filePathWithoutExt = filePath;
-	//strip_extension(filePathWithoutExt);
+	const auto& firstMap = this->_encoders.begin() + lodOffset;
 
 	FILE* pFile = NULL;
 #ifdef _MSC_VER
@@ -47,10 +48,10 @@ bool CompressedImage::save(const string& filePath, const rdo_bc::rdo_bc_params& 
 	desc.dwSize = sizeof(desc);
 	desc.dwFlags = DDSD_WIDTH | DDSD_HEIGHT | DDSD_PIXELFORMAT | DDSD_CAPS;
 
-	desc.dwWidth = this->_encoders[0]->get_orig_width();
-	desc.dwHeight = this->_encoders[0]->get_orig_height();
+	desc.dwWidth = (*firstMap)->get_orig_width();
+	desc.dwHeight = (*firstMap)->get_orig_height();
 
-	desc.dwMipMapCount = (uint32_t)this->_encoders.size();
+	desc.dwMipMapCount = (uint32_t)this->_encoders.size() - lodOffset;
 
 	desc.ddsCaps.dwCaps = DDSCAPS_TEXTURE;
 	desc.ddpfPixelFormat.dwSize = sizeof(desc.ddpfPixelFormat);
@@ -85,8 +86,11 @@ bool CompressedImage::save(const string& filePath, const rdo_bc::rdo_bc_params& 
 		fwrite(&hdr10, sizeof(hdr10), 1, pFile);
 	}
 
-	for (auto& map : this->_encoders)
+	for (auto mapItr = firstMap; mapItr != this->_encoders.end(); mapItr++)
+	{
+		const auto& map = *mapItr;
 		fwrite(map->get_blocks(), map->get_total_blocks_size_in_bytes(), 1, pFile);
+	}
 
 	if (fclose(pFile) == EOF)
 	{

@@ -9,7 +9,8 @@ public:
 
 	CompressedImage::CompressedImage(std::vector<std::shared_ptr<rdo_bc::rdo_bc_encoder>> encoders);
 
-	bool save(const std::string& filePath, const rdo_bc::rdo_bc_params& rp, const AnnotexParameters& annotexParameters);
+	bool save(const std::string& filePath, const rdo_bc::rdo_bc_params& rp, const AnnotexParameters& annotexParameters, uint32_t lodOffset);
+	inline uint32_t getMipMapCount() { return (uint32_t)_encoders.size(); }
 
 private:
 	std::vector<std::shared_ptr<rdo_bc::rdo_bc_encoder>> _encoders;

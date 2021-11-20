@@ -40,10 +40,23 @@ int main(int argc, char* argv[])
 		return EXIT_FAILURE;
 
 	// write
-	auto targetPath = swapExtension(annotexParameters.sourcePath, ".dds", annotexParameters.outputToCurrentDir);
-	if (!compressedImage->save(targetPath, rp, annotexParameters))
-		return EXIT_FAILURE;
-	printf("<= %s\n", targetPath.c_str());
+	if (annotexParameters.lods == 0)
+	{
+		auto targetPath = swapExtension(annotexParameters.sourcePath, ".dds", annotexParameters.outputToCurrentDir);
+		if (!compressedImage->save(targetPath, rp, annotexParameters, 0))
+			return EXIT_FAILURE;
+		printf("<= %s\n", targetPath.c_str());
+	}
+	else
+	{
+		for (uint32_t lod = 0; lod < min(annotexParameters.lods, compressedImage->getMipMapCount()); lod++)
+		{
+			auto targetPath = swapExtension(annotexParameters.sourcePath, "_" + to_string(lod) + ".dds", annotexParameters.outputToCurrentDir);
+			if (!compressedImage->save(targetPath, rp, annotexParameters, lod))
+				return EXIT_FAILURE;
+			printf("<= LOD %u: %s\n", lod, targetPath.c_str());
+		}
+	}
 
 	auto measureTimeEnd = clock();
 	if (annotexParameters.verbose)

@@ -12,7 +12,7 @@ Otherwise I would have chosen [texconv](https://github.com/microsoft/DirectXTex)
 To generate a BC7 DDS texture with LOD from 0 to 2 simply call:
 
 ```shell
-annotex.exe townhall_diff.png -l3
+annotex.exe townhall_diff.png -l=3
 ```
 
 The output will be 3 files including mipmaps:
