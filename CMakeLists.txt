@@ -89,6 +89,12 @@ set (BC7ENC_SRC_LIST ${COMMON_SRC_LIST}
 	rdo_bc_encoder.cpp
 	rdo_bc_encoder.h
 	bc7e.ispc
+	annotex/parseArguments.cpp
+	annotex/parseArguments.h
+	annotex/image.cpp
+	annotex/image.h
+	annotex/dds.cpp
+	annotex/dds.h
 	)
 
 if (NOT SUPPORT_BC7E)
