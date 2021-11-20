@@ -22,28 +22,91 @@ CompressedImage::CompressedImage(vector<shared_ptr<rdo_bc::rdo_bc_encoder>> enco
 
 bool CompressedImage::save(const string& filePath, const rdo_bc::rdo_bc_params& rp, const AnnotexParameters& annotexParameters)
 {
-	// TBD store mipmaps
 	// TBD store lods
 
-	string filePathWithoutExt = filePath;
-	strip_extension(filePathWithoutExt);
+	//string filePathWithoutExt = filePath;
+	//strip_extension(filePathWithoutExt);
 
-	int idx = 0;
-	for (auto mipItr = this->_encoders.begin(); mipItr != this->_encoders.end(); mipItr++, idx++)
+	FILE* pFile = NULL;
+#ifdef _MSC_VER
+	fopen_s(&pFile, filePath.c_str(), "wb");
+#else
+	pFile = fopen(filePath.c_str(), "wb");
+#endif
+	if (!pFile)
 	{
-		const shared_ptr<rdo_bc::rdo_bc_encoder>& mipmap = this->_encoders[idx];
-		const auto mipPath = filePathWithoutExt + "_mip" + to_string(idx) + ".dds";
-		if (!save_dds(mipPath.c_str(),
-			mipmap->get_orig_width(),
-			mipmap->get_orig_height(),
-			mipmap->get_blocks(),
-			annotexParameters.pixel_format_bpp,
-			rp.m_dxgi_format, rp.m_perceptual,
-			annotexParameters.force_dx10_dds))
-		{
-			fprintf(stderr, "Failed writing file \"%s\"\n", filePath.c_str());
-			return false;
-		}
+		fprintf(stderr, "Failed creating file %s!\n", filePath.c_str());
+		return false;
+	}
+
+	fwrite("DDS ", 4, 1, pFile);
+
+	DDSURFACEDESC2 desc;
+	memset(&desc, 0, sizeof(desc));
+
+	desc.dwSize = sizeof(desc);
+	desc.dwFlags = DDSD_WIDTH | DDSD_HEIGHT | DDSD_PIXELFORMAT | DDSD_CAPS;
+
+	desc.dwWidth = this->_encoders[0]->get_orig_width();
+	desc.dwHeight = this->_encoders[0]->get_orig_height();
+
+	desc.dwMipMapCount = this->_encoders.size();
+
+	desc.ddsCaps.dwCaps = DDSCAPS_TEXTURE;
+	desc.ddpfPixelFormat.dwSize = sizeof(desc.ddpfPixelFormat);
+
+	desc.ddpfPixelFormat.dwFlags |= DDPF_FOURCC;
+
+	desc.lPitch = (((desc.dwWidth + 3) & ~3) * ((desc.dwHeight + 3) & ~3) * annotexParameters.pixel_format_bpp) >> 3;
+	desc.dwFlags |= DDSD_LINEARSIZE;
+
+	desc.ddpfPixelFormat.dwRGBBitCount = 0;
+
+	if ((!annotexParameters.force_dx10_dds) &&
+		((rp.m_dxgi_format == DXGI_FORMAT_BC1_UNORM) ||
+			(rp.m_dxgi_format == DXGI_FORMAT_BC3_UNORM) ||
+			(rp.m_dxgi_format == DXGI_FORMAT_BC4_UNORM) ||
+			(rp.m_dxgi_format == DXGI_FORMAT_BC5_UNORM)))
+	{
+		if (rp.m_dxgi_format == DXGI_FORMAT_BC1_UNORM)
+			desc.ddpfPixelFormat.dwFourCC = (uint32_t)PIXEL_FMT_FOURCC('D', 'X', 'T', '1');
+		else if (rp.m_dxgi_format == DXGI_FORMAT_BC3_UNORM)
+			desc.ddpfPixelFormat.dwFourCC = (uint32_t)PIXEL_FMT_FOURCC('D', 'X', 'T', '5');
+		else if (rp.m_dxgi_format == DXGI_FORMAT_BC4_UNORM)
+			desc.ddpfPixelFormat.dwFourCC = (uint32_t)PIXEL_FMT_FOURCC('A', 'T', 'I', '1');
+		else if (rp.m_dxgi_format == DXGI_FORMAT_BC5_UNORM)
+			desc.ddpfPixelFormat.dwFourCC = (uint32_t)PIXEL_FMT_FOURCC('A', 'T', 'I', '2');
+
+		fwrite(&desc, sizeof(desc), 1, pFile);
+	}
+	else
+	{
+		desc.ddpfPixelFormat.dwFourCC = (uint32_t)PIXEL_FMT_FOURCC('D', 'X', '1', '0');
+
+		fwrite(&desc, sizeof(desc), 1, pFile);
+
+		DDS_HEADER_DXT10 hdr10;
+		memset(&hdr10, 0, sizeof(hdr10));
+
+		// Not all tools support DXGI_FORMAT_BC7_UNORM_SRGB (like NVTT), but ddsview in DirectXTex pays attention to it. So not sure what to do here.
+		// For best compatibility just write DXGI_FORMAT_BC7_UNORM.
+		//hdr10.dxgiFormat = srgb ? DXGI_FORMAT_BC7_UNORM_SRGB : DXGI_FORMAT_BC7_UNORM;
+		hdr10.dxgiFormat = rp.m_dxgi_format; // DXGI_FORMAT_BC7_UNORM;
+		hdr10.resourceDimension = D3D10_RESOURCE_DIMENSION_TEXTURE2D;
+		hdr10.arraySize = 1;
+
+		fwrite(&hdr10, sizeof(hdr10), 1, pFile);
+	}
+
+	for (auto& map : this->_encoders)
+	{
+		fwrite(map->get_blocks(), map->get_total_blocks_size_in_bytes(), 1, pFile);
+	}
+
+	if (fclose(pFile) == EOF)
+	{
+		fprintf(stderr, "Failed writing to DDS file %s!\n", filePath.c_str());
+		return false;
 	}
 
 	return true;
