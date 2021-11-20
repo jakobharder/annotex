@@ -18,19 +18,41 @@ std::shared_ptr<Image> Image::fromFile(const string& filePath)
 
 void Image::generateMipMaps()
 {
-	// TBD
+	image_u8 const* current = &this->main;
+
+	while (current->width() > 1 || current->height() > 1) {
+		const int width = max<uint32_t>(1, current->width() / 2);
+		const int height = max<uint32_t>(1, current->height() / 2);
+		this->mipmaps.push_back(make_unique<image_u8>(width, height));
+		image_u8& nextMip = *this->mipmaps.back();
+
+		auto& sourcePixels = current->get_pixels();
+		auto& targetPixels = nextMip.get_pixels();
+
+		const int factorX = width == current->width() ? 1 : 2;
+		const int factorY = height == current->height() ? 1 : 2;
+#pragma omp parallel for
+		for (int y = 0; y < height; y++) {
+			for (int x = 0; x < width; x++) {
+				targetPixels[y * width + x] = sourcePixels[y * factorY * width * factorX + x * factorX];
+			}
+		}
+
+		current = &nextMip;
+	}
 }
 
 shared_ptr<CompressedImage> Image::compress(rdo_bc::rdo_bc_params& rp)
 {
 	vector<image_u8> maps{ main };
-	maps.insert(maps.end(), make_move_iterator(this->mipmaps.begin()), make_move_iterator(this->mipmaps.end()));
+	for (auto& mipmap : this->mipmaps)
+		maps.push_back(*mipmap);
 
 	vector<shared_ptr<rdo_bc::rdo_bc_encoder>> encoders;
-	for (auto mapItr = maps.begin(); mapItr != maps.end(); mapItr++)
+	for (auto& mipmap : maps)
 	{
 		auto encoder = make_shared<rdo_bc::rdo_bc_encoder>();
-		if (!encoder->init(*mapItr, rp))
+		if (!encoder->init(mipmap, rp))
 		{
 			fprintf(stderr, "rdo_bc_encoder::init() failed!\n");
 			return nullptr;
