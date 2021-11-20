@@ -18,6 +18,8 @@ std::shared_ptr<Image> Image::fromFile(const string& filePath)
 
 void Image::generateMipMaps()
 {
+	// super simple box downscale, optimal for pow2 textures or which are at least a sum of two pow2 numbers
+
 	image_u8 const* current = &this->main;
 
 	while (current->width() > 1 || current->height() > 1) {
@@ -29,12 +31,20 @@ void Image::generateMipMaps()
 		auto& sourcePixels = current->get_pixels();
 		auto& targetPixels = nextMip.get_pixels();
 
-		const int factorX = width == current->width() ? 1 : 2;
-		const int factorY = height == current->height() ? 1 : 2;
+		const int factorX = width == (int)current->width() ? 1 : 2;
+		const int factorY = height == (int)current->height() ? 1 : 2;
 #pragma omp parallel for
 		for (int y = 0; y < height; y++) {
 			for (int x = 0; x < width; x++) {
-				targetPixels[y * width + x] = sourcePixels[y * factorY * width * factorX + x * factorX];
+				const auto& aa = sourcePixels[y * factorY * width * factorX + x * factorX];
+				const auto& ab = sourcePixels[((y+1) * factorY - 1) * width * factorX + x * factorX];
+				const auto& ba = sourcePixels[y * factorY * width * factorX + (x+1) * factorX - 1];
+				const auto& bb = sourcePixels[((y+1) * factorY - 1) * width * factorX + (x+1) * factorX - 1];
+
+				targetPixels[y * width + x].a = ((uint32_t)aa.a + ab.a + ba.a + bb.a + 2) / 4;
+				targetPixels[y * width + x].r = ((uint32_t)aa.r + ab.r + ba.r + bb.r + 2) / 4;
+				targetPixels[y * width + x].g = ((uint32_t)aa.g + ab.g + ba.g + bb.g + 2) / 4;
+				targetPixels[y * width + x].b = ((uint32_t)aa.b + ab.b + ba.b + bb.b + 2) / 4;
 			}
 		}
 

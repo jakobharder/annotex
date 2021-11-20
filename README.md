@@ -27,7 +27,21 @@ To get an overview of all parameters call without any arguments:
 annotex.exe
 ```
 
-## License
+### Downscale Algorithm
 
-Original license: [MIT License](./LICENSE), Copyright(c) 2020-2021 Richard Geldreich, Jr.
-Added code in annotex.cpp is also MIT.
+Mipmap and LOD generation are scaled down with a simple box downscale that relies on power of 2 textures (1024, 2048, ...).
+A sum of two power of 2 sizes is also OK (e.g. 1536 = 1024 + 512).
+
+Width and height can be different.
+
+Other sizes will work, but ignore odd pixels when downscaling.
+
+## Notes & License
+
+The original code in this repository is unmodified to enable me to rebase to newer bc7enc if I need to. Only `annotex.cpp`, `annotex/` has been added.
+
+New code has been checked with VS 2019 only.
+
+bc7enc: [MIT License](./LICENSE), Copyright(c) 2020-2021 Richard Geldreich, Jr.
+
+annotex: MIT, Jakob Harder
