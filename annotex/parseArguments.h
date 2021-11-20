@@ -1,10 +1,16 @@
 
 #pragma once
 
+enum AnnotexFormat {
+	Auto,
+	Diff,
+	Mask
+};
+
 struct AnnotexParameters {
 	bool verbose;
 	bool outputToCurrentDir;
-	bool force_dx10_dds;
+	AnnotexFormat format;
 	uint32_t pixel_format_bpp;
 	std::string sourcePath;
 };

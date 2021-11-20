@@ -50,7 +50,7 @@ bool CompressedImage::save(const string& filePath, const rdo_bc::rdo_bc_params& 
 	desc.dwWidth = this->_encoders[0]->get_orig_width();
 	desc.dwHeight = this->_encoders[0]->get_orig_height();
 
-	desc.dwMipMapCount = this->_encoders.size();
+	desc.dwMipMapCount = (uint32_t)this->_encoders.size();
 
 	desc.ddsCaps.dwCaps = DDSCAPS_TEXTURE;
 	desc.ddpfPixelFormat.dwSize = sizeof(desc.ddpfPixelFormat);
@@ -62,27 +62,14 @@ bool CompressedImage::save(const string& filePath, const rdo_bc::rdo_bc_params& 
 
 	desc.ddpfPixelFormat.dwRGBBitCount = 0;
 
-	if ((!annotexParameters.force_dx10_dds) &&
-		((rp.m_dxgi_format == DXGI_FORMAT_BC1_UNORM) ||
-			(rp.m_dxgi_format == DXGI_FORMAT_BC3_UNORM) ||
-			(rp.m_dxgi_format == DXGI_FORMAT_BC4_UNORM) ||
-			(rp.m_dxgi_format == DXGI_FORMAT_BC5_UNORM)))
+	if (rp.m_dxgi_format == DXGI_FORMAT_BC1_UNORM)
 	{
-		if (rp.m_dxgi_format == DXGI_FORMAT_BC1_UNORM)
-			desc.ddpfPixelFormat.dwFourCC = (uint32_t)PIXEL_FMT_FOURCC('D', 'X', 'T', '1');
-		else if (rp.m_dxgi_format == DXGI_FORMAT_BC3_UNORM)
-			desc.ddpfPixelFormat.dwFourCC = (uint32_t)PIXEL_FMT_FOURCC('D', 'X', 'T', '5');
-		else if (rp.m_dxgi_format == DXGI_FORMAT_BC4_UNORM)
-			desc.ddpfPixelFormat.dwFourCC = (uint32_t)PIXEL_FMT_FOURCC('A', 'T', 'I', '1');
-		else if (rp.m_dxgi_format == DXGI_FORMAT_BC5_UNORM)
-			desc.ddpfPixelFormat.dwFourCC = (uint32_t)PIXEL_FMT_FOURCC('A', 'T', 'I', '2');
-
+		desc.ddpfPixelFormat.dwFourCC = (uint32_t)PIXEL_FMT_FOURCC('D', 'X', 'T', '1');
 		fwrite(&desc, sizeof(desc), 1, pFile);
 	}
 	else
 	{
 		desc.ddpfPixelFormat.dwFourCC = (uint32_t)PIXEL_FMT_FOURCC('D', 'X', '1', '0');
-
 		fwrite(&desc, sizeof(desc), 1, pFile);
 
 		DDS_HEADER_DXT10 hdr10;
@@ -99,9 +86,7 @@ bool CompressedImage::save(const string& filePath, const rdo_bc::rdo_bc_params& 
 	}
 
 	for (auto& map : this->_encoders)
-	{
 		fwrite(map->get_blocks(), map->get_total_blocks_size_in_bytes(), 1, pFile);
-	}
 
 	if (fclose(pFile) == EOF)
 	{
