@@ -4,7 +4,8 @@
 enum AnnotexFormat {
 	Auto,
 	Diff,
-	Mask
+	Mask,
+	Rga
 };
 
 struct AnnotexParameters {
@@ -13,7 +14,9 @@ struct AnnotexParameters {
 	AnnotexFormat format;
 	uint32_t pixel_format_bpp;
 	std::string sourcePath;
+	std::string targetPath;
 	uint32_t lods;
 };
 
 bool parseArguments(int argc, char* argv[], rdo_bc::rdo_bc_params& rp, AnnotexParameters& annotexParameters);
+std::string swapExtension(const std::string& filePath, const std::string& newExtension, bool stripPath);

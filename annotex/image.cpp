@@ -16,6 +16,22 @@ std::shared_ptr<Image> Image::fromFile(const string& filePath)
 	return img;
 }
 
+void Image::rgaToNorm()
+{
+	image_u8* current = &this->main;
+	auto& pixels = current->get_pixels();
+
+	const int width = current->width();
+	const int height = current->height();
+	for (int y = 0; y < width; y++) {
+		for (int x = 0; x < height; x++) {
+			auto& p = pixels[y * width + x];
+			p.a = p.b;
+			p.b = 0;
+		}
+	}
+}
+
 void Image::generateMipMaps()
 {
 	// super simple box downscale, optimal for pow2 textures or which are at least a sum of two pow2 numbers

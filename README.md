@@ -36,6 +36,12 @@ Width and height can be different.
 
 Other sizes will work, but ignore odd pixels when downscaling.
 
+## Changes
+
+### 1.1
+
+- Added `_rga.png` to `_norm.dds` conversion
+
 ## Notes & License
 
 The original code in this repository is unmodified to enable me to rebase to newer bc7enc if I need to. Only `annotex.cpp`, `annotex/` has been added.
