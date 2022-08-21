@@ -16,18 +16,50 @@ std::shared_ptr<Image> Image::fromFile(const string& filePath)
 	return img;
 }
 
-void Image::rgaToNorm()
+void Image::rgaToNorm(std::shared_ptr<Image> glowImage)
+{
+	image_u8& current = this->main;
+	const int width = current.width();
+	const int height = current.height();
+	auto& pixels = current.get_pixels();
+
+	if (glowImage != nullptr && glowImage->main.width() == width && glowImage->main.height() == height)
+	{
+		// glow channel is green in r_a+b, blue in target
+		auto& glow = glowImage->main.get_pixels();
+		for (int y = 0; y < height; y++) {
+			for (int x = 0; x < width; x++) {
+				auto& p = pixels[y * width + x];
+				p.a = p.b;
+				p.b = glow[y * width + x].g;
+			}
+		}
+	}
+	else // no glow image
+	{
+		for (int y = 0; y < height; y++) {
+			for (int x = 0; x < width; x++) {
+				auto& p = pixels[y * width + x];
+				p.a = p.b;
+				p.b = 0;
+			}
+		}
+	}
+}
+
+void Image::raToMetal()
 {
 	image_u8* current = &this->main;
 	auto& pixels = current->get_pixels();
 
 	const int width = current->width();
 	const int height = current->height();
-	for (int y = 0; y < width; y++) {
-		for (int x = 0; x < height; x++) {
+	for (int y = 0; y < height; y++) {
+		for (int x = 0; x < width; x++) {
 			auto& p = pixels[y * width + x];
 			p.a = p.b;
-			p.b = 0;
+			p.b = p.r;
+			p.g = p.r;
 		}
 	}
 }

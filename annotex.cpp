@@ -23,9 +23,19 @@ int main(int argc, char* argv[])
 	printf("=> %s %ux%u\n", annotexParameters.sourcePath.c_str(), sourceImage->main.width(), sourceImage->main.height());
 
 	// move pixel channels
-	if (annotexParameters.format == AnnotexFormat::Rga)
+	if (annotexParameters.format == AnnotexFormat::NormRga)
 	{
-		sourceImage->rgaToNorm();
+		std::shared_ptr<Image> glowImage;
+		if (!annotexParameters.glowMapPath.empty())
+		{
+			glowImage = Image::fromFile(annotexParameters.glowMapPath);
+			printf("=> %s %ux%u\n", annotexParameters.glowMapPath.c_str(), sourceImage->main.width(), sourceImage->main.height());
+		}
+		sourceImage->rgaToNorm(glowImage);
+	}
+	else if (annotexParameters.format == AnnotexFormat::MetalR_a)
+	{
+		sourceImage->raToMetal();
 	}
 
 	// process

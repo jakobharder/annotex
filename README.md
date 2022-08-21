@@ -21,10 +21,23 @@ The output will be 3 files including mipmaps:
 - townhall_diff_1.dds
 - townhall_diff_2.dds
 
-To get an overview of all parameters call without any arguments:
 
 ```
-annotex.exe
+Usage: annotex.exe [options] input.png
+
+-f=<format>  Specify encoding format. Default: auto
+   auto: Select below formats based on file ending.
+   diff: Encode to BC7 (default).
+   mask: Encode to BC1.
+         Extension for auto: '_mask.png'.
+   rga:  Encode normal map to BC7. Converts blue to alpha (glossiness).
+         Extension for auto: '_rga.png'.
+         Optional: uses blue channel from '_r_a+b.png' for glow.
+   r_a:  Encode metal map to BC7. Converts blue to alpha (ambient occlusion).
+         Extension for auto: '_r_a.png' or '_r_a+b.png'
+-l=<0-9>  Number of LOD to generate with '_<LOD>.png' ending.
+          0 will disable LODs (default)
+-v  verbose
 ```
 
 ### Downscale Algorithm
@@ -37,6 +50,11 @@ Width and height can be different.
 Other sizes will work, but ignore odd pixels when downscaling.
 
 ## Changes
+
+### 1.2
+
+- Added `_r_a.png`, `_r_a+b.png` to `_metal.dds` conversion
+- Fixed non-square maps with `_rga`.
 
 ### 1.1
 

@@ -5,7 +5,8 @@ enum AnnotexFormat {
 	Auto,
 	Diff,
 	Mask,
-	Rga
+	NormRga,
+	MetalR_a
 };
 
 struct AnnotexParameters {
@@ -15,6 +16,7 @@ struct AnnotexParameters {
 	uint32_t pixel_format_bpp;
 	std::string sourcePath;
 	std::string targetPath;
+	std::string glowMapPath;
 	uint32_t lods;
 };
 
